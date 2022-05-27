@@ -199,7 +199,7 @@ static PyMethodDef module_methods[] = {
     {"set_iutf8_fd", (PyCFunction)pyset_iutf8, METH_VARARGS, ""},
     {"thread_write", (PyCFunction)cm_thread_write, METH_VARARGS, ""},
     {"parse_bytes", (PyCFunction)parse_bytes, METH_VARARGS, ""},
-    {"parse_bytes_dump", (PyCFunction)parse_bytes_dump, METH_VARARGS, ""},
+    {"parse_bytes_dump", (PyCFunction)parse_bytes, METH_VARARGS, ""},
     {"redirect_std_streams", (PyCFunction)redirect_std_streams, METH_VARARGS, ""},
     {"locale_is_valid", (PyCFunction)locale_is_valid, METH_VARARGS, ""},
     {"shm_open", (PyCFunction)py_shm_open, METH_VARARGS, ""},

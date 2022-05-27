@@ -1,0 +1,7 @@
+add_subdirectory(harfbuzz)
+add_subdirectory(python)
+if(UNIX AND NOT APPLE)
+    add_subdirectory(lcms2)
+    add_subdirectory(dbus)
+    add_subdirectory(wayland)
+endif()

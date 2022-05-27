@@ -271,11 +271,11 @@ def as_text(
         pht = pagerhist(screen, as_ansi, add_wrap_markers)
         h: List[str] = [pht] if pht else []
         screen.historybuf.as_text(h.append, as_ansi, add_wrap_markers)
-        if h:
-            if not screen.linebuf.is_continued(0):
-                h[-1] += '\n'
-            if as_ansi:
-                h[-1] += '\x1b[m'
+        #if h:
+        #    if not screen.linebuf.is_continued(0):
+        #        h[-1] += '\n'
+        #    if as_ansi:
+        #        h[-1] += '\x1b[m'
         ans = ''.join(chain(h, lines))
         if ctext:
             ans += ctext
@@ -476,6 +476,7 @@ class Window:
         else:
             self.watchers = global_watchers().copy()
         self.last_focused_at = 0.
+        self.is_pager = False
         self.started_at = monotonic()
         self.current_remote_data: List[str] = []
         self.current_mouse_event_button = 0
@@ -1428,10 +1429,11 @@ class Window:
 
     @ac('cp', 'Show scrollback in a pager like less')
     def show_scrollback(self) -> None:
-        text = self.as_text(as_ansi=True, add_history=True, add_wrap_markers=True)
+        text = self.as_text(as_ansi=False, add_history=True, add_wrap_markers=False)
         data = self.pipe_data(text, has_wrap_markers=True)
         cursor_on_screen = self.screen.scrolled_by < self.screen.lines - self.screen.cursor.y
-        get_boss().display_scrollback(self, data['text'], data['input_line_number'], report_cursor=cursor_on_screen)
+        if not self.is_pager:
+            get_boss().display_scrollback(self, data['text'], data['input_line_number'], report_cursor=cursor_on_screen, is_pager=True)
 
     def show_cmd_output(self, which: CommandOutput, title: str = 'Command output', as_ansi: bool = True, add_wrap_markers: bool = True) -> None:
         text = self.cmd_output(which, as_ansi=as_ansi, add_wrap_markers=add_wrap_markers)

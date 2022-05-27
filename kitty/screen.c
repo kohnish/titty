@@ -1810,7 +1810,7 @@ report_device_attributes(Screen *self, unsigned int mode, char start_modifier) {
                 write_escape_code_to_child(self, CSI, "?62;c");
                 break;
             case '>':
-                write_escape_code_to_child(self, CSI, ">1;" xstr(PRIMARY_VERSION) ";" xstr(SECONDARY_VERSION) "c");  // VT-220 + primary version + secondary version
+                //write_escape_code_to_child(self, CSI, ">1;" xstr(PRIMARY_VERSION) ";" xstr(SECONDARY_VERSION) "c");  // VT-220 + primary version + secondary version
                 break;
         }
     }
@@ -1818,8 +1818,10 @@ report_device_attributes(Screen *self, unsigned int mode, char start_modifier) {
 
 void
 screen_xtversion(Screen *self, unsigned int mode) {
+    (void)self;
     if (mode == 0) {
-        write_escape_code_to_child(self, DCS, ">|kitty(" XT_VERSION ")");
+        //write_escape_code_to_child(self, DCS, ">|kitty(" XT_VERSION ")");
+        //write_escape_code_to_child(self, DCS, ">|kitty");
     }
 }
 
@@ -2016,10 +2018,12 @@ shell_prompt_marking(Screen *self, PyObject *data) {
                 PromptKind pk = PROMPT_START;
                 self->prompt_settings.redraws_prompts_at_all = 1;
                 if (PyUnicode_FindChar(data, ';', 0, PyUnicode_GET_LENGTH(data), 1)) {
-                    DECREF_AFTER_FUNCTION PyObject *sep = PyUnicode_FromString(";");
+                    PyObject *sep = PyUnicode_FromString(";");
                     if (sep) {
-                        DECREF_AFTER_FUNCTION PyObject *parts = PyUnicode_Split(data, sep, -1);
+                        PyObject *parts = PyUnicode_Split(data, sep, -1);
                         if (parts) parse_prompt_mark(self, parts, &pk);
+                        Py_DECREF(sep);
+                        Py_DECREF(parts);
                     }
                 }
                 if (PyErr_Occurred()) PyErr_Print();
@@ -2467,8 +2471,8 @@ ansi_for_range(Screen *self, const Selection *sel, bool insert_newlines, bool st
     IterationData idata;
     iteration_data(self, sel, &idata, -self->historybuf->count, false);
     int limit = MIN((int)self->lines, idata.y_limit);
-    DECREF_AFTER_FUNCTION PyObject *ans = PyTuple_New(limit - idata.y + 1);
-    DECREF_AFTER_FUNCTION PyObject *nl = PyUnicode_FromString("\n");
+    PyObject *ans = PyTuple_New(limit - idata.y + 1);
+    PyObject *nl = PyUnicode_FromString("\n");
     if (!ans || !nl) return NULL;
     ANSIBuf output = {0};
     const GPUCell *prev_cell = NULL;
@@ -2495,10 +2499,14 @@ ansi_for_range(Screen *self, const Selection *sel, bool insert_newlines, bool st
         if (!t) return NULL;
         PyTuple_SET_ITEM(ans, i, t);
     }
+    Py_DECREF(nl);
     PyObject *t = PyUnicode_FromFormat("%s%s", has_escape_codes ? "\x1b[m" : "", output.active_hyperlink_id ? "\x1b]8;;\x1b\\" : "");
-    if (!t) return NULL;
+    if (!t) {
+        Py_DECREF(ans);
+        return NULL;
+    }
     PyTuple_SET_ITEM(ans, PyTuple_GET_SIZE(ans) - 1, t);
-    Py_INCREF(ans);
+    //Py_INCREF(ans);
     return ans;
 }
 
@@ -2838,11 +2846,16 @@ find_cmd_output(Screen *self, OutputOffset *oo, index_type start_screen_y, unsig
 static PyObject*
 cmd_output(Screen *self, PyObject *args) {
     unsigned int which = 0;
-    DECREF_AFTER_FUNCTION PyObject *which_args = PyTuple_GetSlice(args, 0, 1);
-    DECREF_AFTER_FUNCTION PyObject *as_text_args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
+    PyObject *which_args = PyTuple_GetSlice(args, 0, 1);
+    PyObject *as_text_args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
     if (!which_args || !as_text_args) return NULL;
     if (!PyArg_ParseTuple(which_args, "I", &which)) return NULL;
-    if (self->linebuf != self->main_linebuf) Py_RETURN_NONE;
+    if (self->linebuf != self->main_linebuf) {
+        Py_DECREF(which_args);
+        Py_DECREF(as_text_args);
+        Py_RETURN_NONE;
+    }
+    Py_DECREF(which_args);
     OutputOffset oo = {.screen=self};
     bool found = false;
 
@@ -2888,7 +2901,9 @@ cmd_output(Screen *self, PyObject *args) {
             return NULL;
     }
     if (found) {
-        DECREF_AFTER_FUNCTION PyObject *ret = as_text_generic(as_text_args, &oo, get_line_from_offset, oo.num_lines, &self->as_ansi_buf);
+        PyObject *ret = as_text_generic(as_text_args, &oo, get_line_from_offset, oo.num_lines, &self->as_ansi_buf);
+        Py_DECREF(as_text_args);
+        Py_DECREF(ret);
         if (!ret) return NULL;
     }
     if (oo.reached_upper_limit && self->linebuf == self->main_linebuf && OPT(scrollback_pager_history_size) > 0) Py_RETURN_TRUE;
@@ -3010,7 +3025,7 @@ draw(Screen *self, PyObject *src) {
 }
 
 extern void
-parse_sgr(Screen *screen, uint32_t *buf, unsigned int num, unsigned int *params, PyObject *dump_callback, const char *report_name, Region *region);
+parse_sgr(Screen *screen, uint32_t *buf, unsigned int num, int *params, PyObject *dump_callback, const char *report_name, Region *region);
 
 static PyObject*
 apply_sgr(Screen *self, PyObject *src) {
@@ -3019,7 +3034,7 @@ apply_sgr(Screen *self, PyObject *src) {
     Py_UCS4 *buf = PyUnicode_AsUCS4Copy(src);
     if (!buf) return NULL;
     unsigned int params[MAX_PARAMS] = {0};
-    parse_sgr(self, buf, PyUnicode_GET_LENGTH(src), params, NULL, "parse_sgr", NULL);
+    parse_sgr(self, buf, PyUnicode_GET_LENGTH(src), (int *)params, NULL, "parse_sgr", NULL);
     Py_RETURN_NONE;
 }
 

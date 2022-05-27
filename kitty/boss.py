@@ -9,7 +9,7 @@ import sys
 from contextlib import suppress
 from functools import partial
 from gettext import gettext as _
-from time import monotonic
+from time import monotonic, monotonic_ns
 from typing import (
     Any, Callable, Container, Dict, Iterable, Iterator, List, Optional, Set,
     Tuple, Union
@@ -233,6 +233,7 @@ class Boss:
         prewarm: PrewarmProcess,
     ):
         set_layout_options(opts)
+        self.last_seq_key_input_time = 0
         self.update_check_started = False
         self.clipboard_buffers: Dict[str, str] = {}
         self.update_check_process: Optional['PopenType[bytes]'] = None
@@ -241,6 +242,7 @@ class Boss:
         self.current_visual_select: Optional[VisualSelect] = None
         self.startup_cursor_text_color = opts.cursor_text_color
         self.pending_sequences: Optional[SubSequenceMap] = None
+        self.key_seq_repeating = False
         self.default_pending_action: str = ''
         self.cached_values = cached_values
         self.os_window_map: Dict[int, TabManager] = {}
@@ -253,6 +255,7 @@ class Boss:
         # we dont allow reloading the config file to change
         # allow_remote_control
         self.allow_remote_control = opts.allow_remote_control
+        self.repeat_keys = opts.repeat_map
         if args.listen_on and (self.allow_remote_control in ('y', 'socket-only')):
             listen_fd = listen_on(args.listen_on)
         self.prewarm = prewarm
@@ -946,14 +949,22 @@ class Boss:
         return False
 
     def clear_pending_sequences(self) -> None:
+        self.key_seq_repeating = False
         self.pending_sequences = None
         self.default_pending_action = ''
         set_in_sequence_mode(False)
+        self.last_seq_key_input_time = 0
 
-    def process_sequence(self, ev: KeyEvent) -> None:
+    def process_sequence(self, ev: KeyEvent) -> bool:
+        current_time = monotonic_ns()
+
         if not self.pending_sequences:
             set_in_sequence_mode(False)
-            return
+            self.last_seq_key_input_time = current_time
+            return True
+
+        if self.last_seq_key_input_time == 0:
+            self.last_seq_key_input_time = current_time
 
         remaining = {}
         matched_action = None
@@ -969,9 +980,22 @@ class Boss:
             self.pending_sequences = remaining
         else:
             matched_action = matched_action or self.default_pending_action
-            self.clear_pending_sequences()
-            if matched_action is not None:
-                self.combine(matched_action)
+            if current_time - self.last_seq_key_input_time > 650 * 1000000:
+                self.clear_pending_sequences()
+                return False
+            if ev.text in ["h", "j", "k", "l"]:
+               self.last_seq_key_input_time = current_time
+               self.key_seq_repeating = True
+               if matched_action is not None:
+                   self.combine(matched_action)
+            else:
+                if not self.key_seq_repeating:
+                    self.clear_pending_sequences()
+                    if matched_action is not None:
+                        self.combine(matched_action)
+                else:
+                    return False
+        return True
 
     def cancel_current_visual_select(self) -> None:
         if self.current_visual_select:
@@ -1306,7 +1330,7 @@ class Boss:
                 s.shutdown(socket.SHUT_RDWR)
             s.close()
 
-    def display_scrollback(self, window: Window, data: Union[bytes, str], input_line_number: int = 0, title: str = '', report_cursor: bool = True) -> None:
+    def display_scrollback(self, window: Window, data: Union[bytes, str], input_line_number: int = 0, title: str = '', report_cursor: bool = True, is_pager = False) -> None:
 
         def prepare_arg(x: str) -> str:
             x = x.replace('INPUT_LINE_NUMBER', str(input_line_number))
@@ -1332,10 +1356,11 @@ class Boss:
                     else:
                         bdata = re.sub(br'\x1b\].*?\x1b\\', b'', bdata)
 
-            tab.new_special_window(
+            w = tab.new_special_window(
                 SpecialWindow(cmd, bdata, title or _('History'), overlay_for=window.id, cwd=window.cwd_of_child),
                 copy_colors_from=self.active_window
                 )
+            w.is_pager = is_pager
 
     @ac('misc', 'Edit the kitty.conf config file in your favorite text editor')
     def edit_config_file(self, *a: Any) -> None:

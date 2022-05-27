@@ -167,17 +167,37 @@ on_key_input(GLFWkeyevent *ev) {
     }
     PyObject *ke = NULL;
 #define create_key_event() { ke = convert_glfw_key_event_to_python(ev); if (!ke) { PyErr_Print(); return; } }
+    //if (global_state.in_sequence_mode) {
+    //    debug("in sequence mode, handling as shortcut\n");
+    //    if (
+    //        action != GLFW_RELEASE && !is_modifier_key(key)
+    //    ) {
+    //        w->last_special_key_pressed = key;
+    //        create_key_event();
+    //        call_boss(process_sequence, "O", ke);
+    //        Py_CLEAR(ke);
+    //    }
+    //    return;
+    //}
     if (global_state.in_sequence_mode) {
+        bool continue_key_input = false;
         debug("in sequence mode, handling as shortcut\n");
-        if (
-            action != GLFW_RELEASE && !is_modifier_key(key)
-        ) {
+        if (action != GLFW_RELEASE && !is_modifier_key(key)) {
             w->last_special_key_pressed = key;
             create_key_event();
-            call_boss(process_sequence, "O", ke);
+            // call_boss(process_sequence, "O", ke);
+            PyObject *seq_ret = PyObject_CallMethod(global_state.boss, "process_sequence", "O", ke);
+            if (seq_ret) {
+                if (seq_ret == Py_False) {
+                    continue_key_input = true;
+                }
+                Py_DECREF(seq_ret);
+            }
             Py_CLEAR(ke);
         }
-        return;
+        if (!continue_key_input) {
+            return;
+        }
     }
 
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {

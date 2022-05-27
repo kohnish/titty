@@ -603,6 +603,25 @@ class Tab:  # {{{
         return ids[min(n - 1, len(ids) - 1)] if ids else 0
 
     def neighboring_group_id(self, which: EdgeLiteral) -> Optional[int]:
+        if which == "right":
+            neighbors = self.current_layout.neighbors(self.windows)
+            candidates = neighbors.get("right")
+            window = self.most_recent_group(candidates)
+            if window:
+                return window
+            candidates = neighbors.get("bottom")
+            window = self.most_recent_group(candidates)
+            if window:
+                return window
+            candidates = neighbors.get("left")
+            window = self.most_recent_group(candidates)
+            if window:
+                return window
+            candidates = neighbors.get("top")
+            window = self.most_recent_group(candidates)
+            if window:
+                return window
+            return None
         neighbors = self.current_layout.neighbors(self.windows)
         candidates = neighbors.get(which)
         if candidates:
@@ -881,8 +900,13 @@ class TabManager:  # {{{
         return True
 
     def next_tab(self, delta: int = 1) -> None:
-        if len(self.tabs) > 1:
-            self.set_active_tab_idx((self.active_tab_idx + len(self.tabs) + delta) % len(self.tabs))
+        tab_len = len(self.tabs)
+        if tab_len > 1:
+            current_tab = self.active_tab_idx
+            next_tab = current_tab + 1
+            if next_tab >= tab_len:
+                next_tab = 0
+            self.set_active_tab_idx(next_tab)
 
     def tab_at_location(self, loc: str) -> Optional[Tab]:
         if loc == 'prev':

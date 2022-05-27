@@ -24,7 +24,7 @@
 #include <stdbool.h>
 
 #ifndef KITTY_LIB_PATH
-#define KITTY_LIB_PATH "../.."
+#define KITTY_LIB_PATH ".."
 #endif
 #ifndef KITTY_LIB_DIR_NAME
 #define KITTY_LIB_DIR_NAME "lib"

@@ -1213,6 +1213,64 @@ def create_minimal_macos_bundle(args: Options, where: str) -> None:
         os.path.join(where, appname))
     create_macos_app_icon(resources_dir)
 
+def make(args: Options, where: str) -> None:
+    os.makedirs("bin/")
+    build_launcher(args, "bin/")
+    launcher_dir = "bin/"
+    bundle_type = "source"
+    werror = '' if args.ignore_compiler_warnings else '-pedantic-errors -Werror'
+    cflags = f'-Wall {werror} -fpie'.split()
+    if args.build_universal_binary:
+        cflags += '-arch x86_64 -arch arm64'.split()
+    cppflags = []
+    libs: List[str] = []
+    if args.profile or args.sanitize:
+        if args.sanitize:
+            cflags.append('-g3')
+            cflags.extend(get_sanitize_args(env.cc, env.ccver))
+            libs += ['-lasan'] if is_gcc(env.cc) and not is_macos else []
+        else:
+            cflags.append('-g')
+        if args.profile:
+            libs.append('-lprofiler')
+    else:
+        cflags.append('-O3')
+    if bundle_type.endswith('-freeze'):
+        cppflags.append('-DFOR_BUNDLE')
+        cppflags.append(f'-DPYVER="{sysconfig.get_python_version()}"')
+        cppflags.append(f'-DKITTY_LIB_DIR_NAME="{args.libdir_name}"')
+    elif bundle_type == 'source':
+        cppflags.append('-DFROM_SOURCE')
+    if bundle_type.startswith('macos-'):
+        #klp = '../Resources/kitty'
+        klp = ''
+    elif bundle_type.startswith('linux-'):
+        klp = '../{}/kitty'.format(args.libdir_name.strip('/'))
+    elif bundle_type == 'source':
+        klp = os.path.relpath('.', launcher_dir)
+    else:
+        raise SystemExit(f'Unknown bundle type: {bundle_type}')
+    cppflags.append(f'-DKITTY_LIB_PATH="{klp}"')
+    pylib = get_python_flags(cflags, for_main_executable=True)
+    cppflags += shlex.split(os.environ.get('CPPFLAGS', ''))
+    cflags += shlex.split(os.environ.get('CFLAGS', ''))
+    ldflags = shlex.split(os.environ.get('LDFLAGS', ''))
+    for path in args.extra_include_dirs:
+        cflags.append(f'-I{path}')
+    if bundle_type == 'linux-freeze':
+        # --disable-new-dtags prevents -rpath from generating RUNPATH instead of
+        # RPATH entries in the launcher. The ld dynamic linker does not search
+        # RUNPATH locations for transitive dependencies, unlike RPATH.
+        ldflags += ['-Wl,--disable-new-dtags', '-Wl,-rpath,$ORIGIN/../lib']
+    os.makedirs(launcher_dir, exist_ok=True)
+    dest = os.path.join(launcher_dir, 'test')
+    src = 'launcher.c'
+    cmd = env.cc + cppflags + cflags + [
+           src, '-o', dest] + ldflags + libs + pylib
+    key = CompileKey('launcher.c', 'test')
+    desc = f'Building {emphasis("launcher")} ...'
+    args.compilation_database.add_command(desc, cmd, partial(newer, dest, src), key=key, keyfile=src)
+    args.compilation_database.build_all()
 
 def create_macos_bundle_gunk(dest: str) -> None:
     ddir = Path(dest)

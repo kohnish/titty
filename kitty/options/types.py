@@ -616,6 +616,7 @@ class Options:
     symbol_map: typing.Dict[typing.Tuple[int, int], str] = {}
     watcher: typing.Dict[str, str] = {}
     map: typing.List[kitty.options.utils.KeyDefinition] = []
+    repeat_map: typing.List[str] = []
     keymap: KeyMap = {}
     sequence_map: SequenceMap = {}
     alias_map: AliasMap = AliasMap()
