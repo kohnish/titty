@@ -146,7 +146,7 @@ new(PyTypeObject *type, PyObject *args, PyObject UNUSED *kwds) {
     self->death_notify = death_notify; Py_INCREF(death_notify);
     if (dump_callback != Py_None) {
         self->dump_callback = dump_callback; Py_INCREF(dump_callback);
-        parse_func = parse_worker_dump;
+        parse_func = parse_worker;
     } else parse_func = parse_worker;
     self->count = 0;
     children_fds[0].fd = self->io_loop_data.wakeup_read_fd; children_fds[1].fd = self->io_loop_data.signal_read_fd;

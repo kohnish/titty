@@ -9,7 +9,8 @@
 #include "options/to-c-generated.h"
 #include <math.h>
 
-GlobalState global_state = {{0}};
+// ToDo: make it static
+GlobalState global_state;
 
 #define REMOVER(array, qid, count, destroy, capacity) { \
     for (size_t i = 0; i < count; i++) { \

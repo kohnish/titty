@@ -846,9 +846,9 @@ as_text_generic(PyObject *args, void *container, get_line_func get_line, index_t
     int as_ansi = 0, insert_wrap_markers = 0;
     if (!PyArg_ParseTuple(args, "O|pp", &callback, &as_ansi, &insert_wrap_markers)) return NULL;
     PyObject *t = NULL;
-    DECREF_AFTER_FUNCTION PyObject *nl = PyUnicode_FromString("\n");
-    DECREF_AFTER_FUNCTION PyObject *cr = PyUnicode_FromString("\r");
-    DECREF_AFTER_FUNCTION PyObject *sgr_reset = PyUnicode_FromString("\x1b[m");
+    PyObject *nl = PyUnicode_FromString("\n");
+    PyObject *cr = PyUnicode_FromString("\r");
+    PyObject *sgr_reset = PyUnicode_FromString("\x1b[m");
     if (nl == NULL || cr == NULL || sgr_reset == NULL) return NULL;
     const GPUCell *prev_cell = NULL;
     ansibuf->active_hyperlink_id = 0;
@@ -877,6 +877,9 @@ as_text_generic(PyObject *args, void *container, get_line_func get_line, index_t
         t = PyUnicode_FromString("\x1b]8;;\x1b\\");
         APPEND_AND_DECREF(t);
     }
+    Py_DECREF(nl);
+    Py_DECREF(cr);
+    Py_DECREF(sgr_reset);
     Py_RETURN_NONE;
 #undef APPEND
 #undef APPEND_AND_DECREF

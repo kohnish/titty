@@ -108,6 +108,8 @@ static const struct wl_output_listener outputListener = {
     outputHandleMode,
     outputHandleDone,
     outputHandleScale,
+    NULL,
+    NULL
 };
 
 

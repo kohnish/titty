@@ -457,7 +457,7 @@ as_text(LineBuf *self, PyObject *args) {
 
 static PyObject*
 __str__(LineBuf *self) {
-    DECREF_AFTER_FUNCTION PyObject *lines = PyTuple_New(self->ynum);
+    PyObject *lines = PyTuple_New(self->ynum);
     if (lines == NULL) return PyErr_NoMemory();
     for (index_type i = 0; i < self->ynum; i++) {
         init_line(self, self->line, self->line_map[i]);
@@ -465,7 +465,9 @@ __str__(LineBuf *self) {
         if (t == NULL) return NULL;
         PyTuple_SET_ITEM(lines, i, t);
     }
-    DECREF_AFTER_FUNCTION PyObject *sep = PyUnicode_FromString("\n");
+    PyObject *sep = PyUnicode_FromString("\n");
+    Py_DECREF(lines);
+    Py_DECREF(sep);
     return PyUnicode_Join(sep, lines);
 }
 
@@ -526,7 +528,10 @@ copy_old(LineBuf *self, PyObject *y) {
     if (!PyObject_TypeCheck(y, &LineBuf_Type)) { PyErr_SetString(PyExc_TypeError, "Not a LineBuf object"); return NULL; }
     LineBuf *other = (LineBuf*)y;
     if (other->xnum != self->xnum) { PyErr_SetString(PyExc_ValueError, "LineBuf has a different number of columns"); return NULL; }
-    Line sl = {{0}}, ol = {{0}};
+    Line sl;
+    memset(&sl, 0, sizeof(Line));
+    Line ol;
+    memset(&sl, 0, sizeof(Line));
     sl.xnum = self->xnum; ol.xnum = other->xnum;
 
     for (index_type i = 0; i < MIN(self->ynum, other->ynum); i++) {

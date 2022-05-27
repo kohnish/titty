@@ -1352,6 +1352,9 @@ class Parser:
         for k in parse_map(val):
             ans['map'].append(k)
 
+    def repeat_map(self, val: str, ans: typing.Dict[str, typing.Any]) -> None:
+        ans['repeat_map'].append(val)
+
     def mouse_map(self, val: str, ans: typing.Dict[str, typing.Any]) -> None:
         for k in parse_mouse_map(val):
             ans['mouse_map'].append(k)
@@ -1368,6 +1371,7 @@ def create_result_dict() -> typing.Dict[str, typing.Any]:
         'symbol_map': {},
         'watcher': {},
         'map': [],
+        'repeat_map': [],
         'mouse_map': [],
     }
 

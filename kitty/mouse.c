@@ -914,7 +914,7 @@ scroll_event(double xoffset, double yoffset, int flags, int modifiers) {
         if (s) {
             bool upwards = s > 0;
             if (screen->modes.mouse_tracking_mode) {
-                int sz = encode_mouse_scroll(w, upwards ? 4 : 5, modifiers);
+                int sz = encode_mouse_scroll(w, upwards, modifiers);
                 if (sz > 0) {
                     mouse_event_buf[sz] = 0;
                     for (s = abs(s); s > 0; s--) {
@@ -922,8 +922,12 @@ scroll_event(double xoffset, double yoffset, int flags, int modifiers) {
                     }
                 }
             } else {
-                if (screen->linebuf == screen->main_linebuf) screen_history_scroll(screen, abs(s), upwards);
-                else fake_scroll(w, abs(s), upwards);
+                if (screen->linebuf == screen->main_linebuf) {
+                    PyObject *callback_ret = PyObject_CallMethod(w->render_data.screen->callbacks, "show_scrollback", NULL);
+                    Py_DECREF(callback_ret);
+                } else {
+                    fake_scroll(w, abs(s), upwards);
+                }
             }
         }
     }

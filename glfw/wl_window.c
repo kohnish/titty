@@ -481,7 +481,8 @@ static void xdgToplevelHandleClose(void* data,
 
 static const struct xdg_toplevel_listener xdgToplevelListener = {
     xdgToplevelHandleConfigure,
-    xdgToplevelHandleClose
+    xdgToplevelHandleClose,
+    NULL
 };
 
 static void xdgSurfaceHandleConfigure(void* data,
