@@ -827,8 +827,8 @@ int _glfwPlatformInit(void)
         _glfwInputError(GLFW_PLATFORM_ERROR,
                         "Wayland: Failed to initialize event loop data");
     }
-    glfw_dbus_init(&_glfw.wl.dbus, &_glfw.wl.eventLoopData);
-    glfw_initialize_desktop_settings();
+    //glfw_dbus_init(&_glfw.wl.dbus, &_glfw.wl.eventLoopData);
+    //glfw_initialize_desktop_settings();
     _glfw.wl.keyRepeatInfo.keyRepeatTimer = addTimer(&_glfw.wl.eventLoopData, "wayland-key-repeat", ms_to_monotonic_t(500ll), 0, true, dispatchPendingKeyRepeats, NULL, NULL);
     _glfw.wl.cursorAnimationTimer = addTimer(&_glfw.wl.eventLoopData, "wayland-cursor-animation", ms_to_monotonic_t(500ll), 0, true, animateCursorImage, NULL, NULL);
 

@@ -48,6 +48,7 @@ static DBusConnection *session_bus = NULL;
 
 bool
 glfw_dbus_init(_GLFWDBUSData *dbus, EventLoopData *eld) {
+    return false;
     dbus->eld = eld;
     dbus_data = dbus;
     return true;
