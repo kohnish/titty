@@ -406,9 +406,10 @@ def _main() -> None:
     bad_lines: List[BadLine] = []
     opts = create_opts(cli_opts, accumulate_bad_lines=bad_lines)
     setup_environment(opts, cli_opts)
-    prewarm = fork_prewarm_process(opts)
-    if prewarm is None:
-        raise SystemExit(1)
+    prewarm = None
+    #prewarm = fork_prewarm_process(opts)
+    #if prewarm is None:
+    #    raise SystemExit(1)
     init_glfw(opts, cli_opts.debug_keyboard, cli_opts.debug_rendering)
     if cli_opts.watcher:
         from .window import global_watchers

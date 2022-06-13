@@ -262,7 +262,7 @@ class Boss:
         self.child_monitor = ChildMonitor(
             self.on_child_death,
             DumpCommands(args) if args.dump_commands or args.dump_bytes else None,
-            talk_fd, listen_fd, self.prewarm.take_from_worker_fd()
+            talk_fd, listen_fd, -1
         )
         set_boss(self)
         self.args = args
