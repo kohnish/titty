@@ -404,18 +404,6 @@ static void pointerHandleAxisDiscrete(void *data UNUSED,
     _glfwInputScroll(window, x, y, 0, _glfw.wl.xkb.states.modifiers);
 }
 
-static const struct wl_pointer_listener pointerListener = {
-    pointerHandleEnter,
-    pointerHandleLeave,
-    pointerHandleMotion,
-    pointerHandleButton,
-    pointerHandleAxis,
-    pointerHandleFrame,
-    pointerHandleAxisSource,
-    pointerHandleAxisStop,
-    pointerHandleAxisDiscrete,
-};
-
 static void keyboardHandleKeymap(void* data UNUSED,
                                  struct wl_keyboard* keyboard UNUSED,
                                  uint32_t format,
@@ -567,6 +555,16 @@ static void seatHandleCapabilities(void* data UNUSED,
     if ((caps & WL_SEAT_CAPABILITY_POINTER) && !_glfw.wl.pointer)
     {
         _glfw.wl.pointer = wl_seat_get_pointer(seat);
+        static struct wl_pointer_listener pointerListener;
+        pointerListener.enter = pointerHandleEnter;
+        pointerListener.leave = pointerHandleLeave;
+        pointerListener.motion = pointerHandleMotion;
+        pointerListener.button = pointerHandleButton;
+        pointerListener.axis = pointerHandleAxis;
+        pointerListener.frame = pointerHandleFrame;
+        pointerListener.axis_source = pointerHandleAxisSource;
+        pointerListener.axis_stop = pointerHandleAxisStop;
+        pointerListener.axis_discrete = pointerHandleAxisDiscrete;
         wl_pointer_add_listener(_glfw.wl.pointer, &pointerListener, NULL);
     }
     else if (!(caps & WL_SEAT_CAPABILITY_POINTER) && _glfw.wl.pointer)

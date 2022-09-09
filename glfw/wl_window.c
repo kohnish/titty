@@ -479,12 +479,6 @@ static void xdgToplevelHandleClose(void* data,
     _glfwInputWindowCloseRequest(window);
 }
 
-static const struct xdg_toplevel_listener xdgToplevelListener = {
-    xdgToplevelHandleConfigure,
-    xdgToplevelHandleClose,
-    NULL
-};
-
 static void xdgSurfaceHandleConfigure(void* data,
                                       struct xdg_surface* surface,
                                       uint32_t serial)
@@ -595,6 +589,10 @@ createXdgSurface(_GLFWwindow* window)
                         "Wayland: xdg-toplevel creation failed");
         return false;
     }
+
+    static struct xdg_toplevel_listener xdgToplevelListener;
+    xdgToplevelListener.configure = xdgToplevelHandleConfigure;
+    xdgToplevelListener.close = xdgToplevelHandleClose;
 
     xdg_toplevel_add_listener(window->wl.xdg.toplevel,
                               &xdgToplevelListener,
