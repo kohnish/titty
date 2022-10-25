@@ -38,7 +38,7 @@ endif()
 set(inc
     ${PROJECT_BINARY_DIR}/include
     ../kitty
-    /usr/include/python3.10
+    /usr/include/python3.11
     /usr/include/harfbuzz
     /usr/include/freetype2
     )

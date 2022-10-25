@@ -116,7 +116,7 @@ add_custom_target(pip-install
                   )
 
 add_custom_target(run
-                  COMMAND python ./pip/local/lib/python*/site-packages/titty-*-py*.egg/titty/__main__.py
+                  COMMAND python ./pip/lib/python*/site-packages/titty-*-py*.egg/titty/__main__.py
                   DEPENDS pip-install
                   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
                   )
